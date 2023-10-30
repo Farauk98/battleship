@@ -11,4 +11,5 @@ def create_battle_grid(request):
     html_table = create_battle_grid_html(board)
 
     # Możesz wyświetlić lub zapisywać wynik w pliku HTML
+    print(html_table)
     return HttpResponse(html_table)
