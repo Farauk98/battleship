@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Player, Game, Battle_grid, Move
+
+admin.site.register(Player)
+admin.site.register(Game)
+admin.site.register(Battle_grid)
+admin.site.register(Move)
