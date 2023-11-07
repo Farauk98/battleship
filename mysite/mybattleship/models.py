@@ -16,9 +16,9 @@ class Battle_grid(models.Model):
     is_ship = models.BooleanField()
     def __str__(self):
         if self.is_ship:
-            f"X at ({self.x}, {self.y}) in Game {self.game_id}"
+            return f"X at ({self.x}, {self.y}) in Game {self.game_id}"
         else:
-            f"0 at ({self.x}, {self.y}) in Game {self.game_id}"
+            return f"0 at ({self.x}, {self.y}) in Game {self.game_id}"
 
 class Move(models.Model):
     battle_grid = models.ForeignKey(Battle_grid, on_delete=models.CASCADE)
