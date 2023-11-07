@@ -2,6 +2,8 @@ from django.http import HttpResponse
 from .battleship_utils import place_ship,create_battle_grid_html
 from .models import Game,Battle_grid
 from django.shortcuts import get_object_or_404
+from .tables import Game_table
+from django_tables2 import SingleTableView
 
 def create_battlefield(request):
     ships=[5,4,3,3,2]
@@ -45,3 +47,7 @@ def show_battlefield(request,pk):
     print(html_table)
     return HttpResponse(html_table)
 
+class Game_list_view(SingleTableView):
+    model = Game
+    table_class = Game_table
+    template_name = 'table.html'
