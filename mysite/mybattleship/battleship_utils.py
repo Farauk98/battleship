@@ -45,3 +45,4 @@ def place_ship(board, ship_length, empty=False,fill=True):
                 for i in range(ship_length):
                     board[start_x][start_y + i] = fill
             break
+
