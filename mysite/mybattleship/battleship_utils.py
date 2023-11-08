@@ -1,4 +1,5 @@
 import random
+from .models import Game, Battle_grid, Move
 
 def create_battle_grid_html(board):
     # Ustal rozmiar planszy
@@ -46,3 +47,40 @@ def place_ship(board, ship_length, empty=False,fill=True):
                     board[start_x][start_y + i] = fill
             break
 
+def create_game(ships=[5,4,3,3,2]):
+    board = [[False for _ in range(10)] for _ in range(10)]
+    for ship_length in ships:
+        place_ship(board, ship_length)
+
+    game = Game(score=0)
+    game.save()
+    counter_x =0
+    for row in board:
+        counter_y =0
+        for column in row:
+            battle_grid =Battle_grid(
+                game = game,
+                x=counter_x,
+                y=counter_y,
+                is_ship = column
+            )
+            battle_grid.save()
+            counter_y+=1
+        counter_x+=1
+    return game,board
+
+def random_method(game):
+    array_of_battle_grids = Battle_grid.objects.filter(game = game)
+    counter = 0
+    while len(array_of_battle_grids.filter(is_ship=True)):
+        counter += 1
+        index = random.randint(0,len(array_of_battle_grids)-1)
+        move = Move(
+            game = game,
+            battle_grid = array_of_battle_grids[index],
+            order = counter
+        )
+        move.save()
+        array_of_battle_grids = array_of_battle_grids.exclude(id = array_of_battle_grids[index].id)
+    game.score = counter
+    game.save()

@@ -1,38 +1,16 @@
 from django.http import HttpResponse
-from .battleship_utils import place_ship,create_battle_grid_html
+from .battleship_utils import place_ship,create_battle_grid_html, random_method, create_game
 from .models import Game,Battle_grid, Move
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from .tables import Game_table
 from django_tables2 import SingleTableView
 import random
+import time
+from django.db.models import Avg
 
 def create_battlefield(request):
-    ships=[5,4,3,3,2]
-    board = [[False for _ in range(10)] for _ in range(10)]
-   
-    for ship_length in ships:
-        place_ship(board, ship_length)
-
-    game = Game(score=0)
-    game.save()
-    counter_x =0
-    for row in board:
-        counter_y =0
-        for column in row:
-            battle_grid =Battle_grid(
-                game = game,
-                x=counter_x,
-                y=counter_y,
-                is_ship = column
-            )
-            battle_grid.save()
-            counter_y+=1
-        counter_x+=1
-
+    _,board = create_game()
     html_table = create_battle_grid_html(board)
-
-    # Możesz wyświetlić lub zapisywać wynik w pliku HTML
-    print(html_table)
     return HttpResponse(html_table)
 
 def show_battlefield(request,pk):
@@ -56,20 +34,43 @@ class Game_list_view(SingleTableView):
 def random_shoot(request,pk):
     game = get_object_or_404(Game, id=pk)
     if game.score == 0:
-        array_of_battle_grids = Battle_grid.objects.filter(game = game)
-        counter = 0
-        while len(array_of_battle_grids.filter(is_ship=True)):
-            counter += 1
-            index = random.randint(0,len(array_of_battle_grids)-1)
-            move = Move(
-                game = game,
-                battle_grid = array_of_battle_grids[index],
-                order = counter
-            )
-            move.save()
-            array_of_battle_grids = array_of_battle_grids.exclude(id = array_of_battle_grids[index].id)
-        game.score = counter
-        game.save()
+        random_method(game)
     elif game.score != 0:
         counter =  game.score
     return HttpResponse(counter)
+    
+def serial_create_game_with_random_strategy(request):
+    total_time = 0
+    num_iterations = 100
+    for _ in range(num_iterations):
+        start_time = time.time()
+        game,board = create_game()
+        random_method(game)
+        end_time = time.time()  # Czas po zakończeniu kroku
+        step_time = end_time - start_time  # Czas trwania kroku
+        total_time += step_time
+
+    average_step_time = total_time / num_iterations
+    response_text = f"Average time for one step: {average_step_time} seconds"
+    return HttpResponse(response_text)
+
+def serial_create_game_with_random_strategy(request):
+    total_time = 0
+    num_iterations = 100
+    for _ in range(num_iterations):
+        start_time = time.time()
+        game,board = create_game()
+        random_method(game)
+        end_time = time.time()  # Czas po zakończeniu kroku
+        step_time = end_time - start_time  # Czas trwania kroku
+        total_time += step_time
+
+    average_step_time = total_time / num_iterations
+    response_text = f"Average time for one step: {average_step_time} seconds"
+    return HttpResponse(response_text)
+
+def efficiency_of_methods(request):
+    avg_score = Game.objects.aggregate(avg_score=Avg('score'))['avg_score']
+    response_text = f"Average efficiency_of_methods: {avg_score}"
+    return HttpResponse(response_text)
+
