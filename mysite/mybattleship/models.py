@@ -28,9 +28,9 @@ class Battle_grid(models.Model):
 
     def __str__(self):
         if self.is_ship:
-            return f"X at ({self.x}, {self.y}) in Game {self.battlefield_id}, is {self.is_shot}"
+            return f"X at ({self.x}, {self.y}) in Battlefield {self.battlefield_id}, is {self.is_shot}"
         else:
-            return f"0 at ({self.x}, {self.y}) in Game {self.battlefield_id}, is {self.is_shot}"
+            return f"0 at ({self.x}, {self.y}) in Battlefield {self.battlefield_id}, is {self.is_shot}"
 
 class Boat(models.Model):
     battle_grids = models.ManyToManyField(Battle_grid)
@@ -66,3 +66,14 @@ class Invitation(models.Model):
 
     def get_ships(self):
         return self.ships_sizes
+    
+from django.utils import timezone
+
+class ChatMessage(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='chat_messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'Message from {self.sender} in game {self.game.id}'

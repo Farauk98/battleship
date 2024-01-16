@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User
+from django.contrib.auth.models import UserManager
+from .models import ChatMessage
 
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(label='Nazwa użytkownika')
@@ -12,13 +13,13 @@ class ShotForm(forms.Form):
     y = forms.IntegerField(min_value=0, max_value=9, label="Y Coordinate")
 
 
-class NumberArrayForm(forms.Form):
+class CreateInvitationForm(forms.Form):
     
     numbers = forms.CharField(widget=forms.Textarea, label="Wpisz liczby")
     user = forms.ModelChoiceField(queryset=None, label="Wybierz użytkownika")
 
     def __init__(self, current_user, *args, **kwargs):
-        super(NumberArrayForm, self).__init__(*args, **kwargs)
+        super(CreateInvitationForm, self).__init__(*args, **kwargs)
         # Set the queryset to exclude the current user
         self.fields['user'].queryset = User.objects.exclude(id=current_user.id)
         self.fields['user'].required = True
@@ -45,3 +46,8 @@ class NumberArrayForm(forms.Form):
             raise ValidationError("Każda liczba musi być w zakresie od 1 do 6.")
 
         return numbers
+    
+class ChatForm(forms.ModelForm):
+    class Meta:
+        model = ChatMessage
+        fields = ['content']

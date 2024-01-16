@@ -1,68 +1,84 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect,render
-from django_tables2 import SingleTableView
 from django.views.generic import TemplateView
 from django.contrib.auth import authenticate, login
 
 from .models import Game, Battlefield,Battle_grid, Move, User, Invitation
-from .forms import ShotForm, UserLoginForm
-from .tables import Battlefield_table,Game_table
+from .forms import ShotForm, UserLoginForm, CreateInvitationForm
 from .battleship_utils import create_game_for_one, create_battle_grid_html
+
+from .models import ChatMessage
+from .forms import ChatForm
+
+def main_menu(request):
+    return render(request, 'main_menu.html')
 
 class GameStatusView(TemplateView):
     template_name = 'game_status.html'
 
     def post(self, request, *args, **kwargs):
-        form = ShotForm(request.POST)
-        user = self.request.user
         game_id = kwargs.get('game_id')
         game = get_object_or_404(Game, id=game_id)
-        if form.is_valid():
-            x = form.cleaned_data['x']
-            y = form.cleaned_data['y']
-            if user == game.battlefield_1.owner: 
-                opponent_battlefield = game.battlefield_2
-            elif user == game.battlefield_2.owner:
-                opponent_battlefield = game.battlefield_1
+        if 'submit_chat' in request.POST:
+            # Handle chat form submission
+            chat_form = ChatForm(request.POST)
+            if chat_form.is_valid():
+                new_message = chat_form.save(commit=False)
+                new_message.game = game
+                new_message.sender = request.user
+                new_message.save()
+        elif 'submit_shot' in request.POST:
 
-            else:
-                return redirect('error')
-        
-            battle_grid = Battle_grid.objects.get(
-                battlefield = opponent_battlefield,
-                x = x ,
-                y = y ,
-            )
-            if not battle_grid.is_shot:
-                try:
-                    order = Move.objects.filter(game=game).latest('order').order + 1
-                except:
-                    order = 1
+            form = ShotForm(request.POST)
+            user = self.request.user
+            game_id = kwargs.get('game_id')
+            game = get_object_or_404(Game, id=game_id)
+            if form.is_valid():
+                x = form.cleaned_data['x']
+                y = form.cleaned_data['y']
+                if user == game.battlefield_1.owner: 
+                    opponent_battlefield = game.battlefield_2
+                elif user == game.battlefield_2.owner:
+                    opponent_battlefield = game.battlefield_1
 
-                move = Move(
-                    game = game,
-                    battle_grid = battle_grid,
-                    order =order
-                    
-                )
-                move.save()
-                battle_grid.is_shot = True
-                battle_grid.save()
-
-                game.player1_move = not game.player1_move
-                game.save()
-
-                check_if_win = Battle_grid.objects.filter(battlefield = opponent_battlefield).filter(is_ship=True).filter(is_shot=False)
-                if len(check_if_win) == 0:
-                    game.winner = user
-                    game.score = order
-                    game.save()
-                    return HttpResponse("Wygrales")
                 else:
-                    return redirect('game_status', game_id=kwargs.get('game_id'))  # Przekieruj z powrotem do widoku gry
-            else:
-                request.session['shot_error'] = "This grid has already been shot at."
-            return redirect('game_status', game_id=game_id)
+                    return redirect('error')
+            
+                battle_grid = Battle_grid.objects.get(
+                    battlefield = opponent_battlefield,
+                    x = x ,
+                    y = y ,
+                )
+                if not battle_grid.is_shot:
+                    try:
+                        order = Move.objects.filter(game=game).latest('order').order + 1
+                    except:
+                        order = 1
+
+                    move = Move(
+                        game = game,
+                        battle_grid = battle_grid,
+                        order =order
+                        
+                    )
+                    move.save()
+                    battle_grid.is_shot = True
+                    battle_grid.save()
+
+                    game.player1_move = not game.player1_move
+                    game.save()
+
+                    check_if_win = Battle_grid.objects.filter(battlefield = opponent_battlefield).filter(is_ship=True).filter(is_shot=False)
+                    if len(check_if_win) == 0:
+                        game.winner = user
+                        game.score = order
+                        game.save()
+                        return HttpResponse("Wygrales")
+                    else:
+                        return redirect('game_status', game_id=kwargs.get('game_id'))  # Przekieruj z powrotem do widoku gry
+                else:
+                    request.session['shot_error'] = "This grid has already been shot at."
+                return redirect('game_status', game_id=game_id)
 
 
         # W przypadku błędów formularza, przekieruj z powrotem z informacją o błędzie
@@ -120,6 +136,11 @@ class GameStatusView(TemplateView):
         context['moves'] = moves
 
         context['shot_form'] = ShotForm()
+
+        game_id = kwargs.get('game_id')
+        context['chat_messages'] = ChatMessage.objects.filter(game_id=game_id).order_by('-timestamp')[:10]  # last 10 messages
+        context['chat_form'] = ChatForm()
+
         return render(request, self.template_name, context)
 
     
@@ -151,22 +172,6 @@ def get_player1_move(request):
     game = Game.objects.first()  # Assuming you have only one game for simplicity
     data = {'player1_move': game.player1_move}
     return JsonResponse(data)
-
-def create_game(request):
-
-    user1 = User.objects.get(username = "admin")
-    user2 = User.objects.get(username = "test2")
-    battlefield_1= create_game_for_one(player = user1)
-    battlefield_2= create_game_for_one(player = user2)
-
-    game = Game(
-        score = 0,
-        battlefield_1 = battlefield_1,
-        battlefield_2 = battlefield_2
-    )
-    game.save()
-
-    return HttpResponse("Created")
 
 def accept_invitation(request,pk):
     invitation = get_object_or_404(Invitation, id=pk)
@@ -204,15 +209,6 @@ def show_battlefield(request,pk):
     # Możesz wyświetlić lub zapisywać wynik w pliku HTML
     return HttpResponse(html_table)
 
-class Battlefield_list_view(SingleTableView):
-    model = Battlefield
-    table_class = Battlefield_table
-    template_name = 'table.html'
-
-class Game_list_view(SingleTableView):
-    model = Game
-    table_class = Game_table
-    template_name = 'table.html'
 
 def user_login(request):
     if request.method == 'POST':
@@ -223,25 +219,21 @@ def user_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('show_battles')  # Zastąp 'home' odpowiednim adresem URL
+                return redirect('main_menu')  # Zastąp 'home' odpowiednim adresem URL
     else:
         form = UserLoginForm()
     return render(request, 'login.html', {'form': form})
 
-
-from .forms import NumberArrayForm
-
-def number_array_view(request):
+def create_invitation(request):
     # Initialize the form with the current queryset excluding the current user
-    form = NumberArrayForm(request.user)
+    form = CreateInvitationForm(request.user)
     if request.method == 'POST':
         # Pass the current user to the form for POST request as well
-        form = NumberArrayForm(request.user, request.POST)
+        form = CreateInvitationForm(request.user, request.POST)
         if form.is_valid():
             numbers = form.cleaned_data['numbers']
             user2 = form.cleaned_data['user']
-
-
+            
             invitation = Invitation(
                 player1 = request.user,
                 player2 = user2,
@@ -251,7 +243,7 @@ def number_array_view(request):
             invitation.save()
             return HttpResponse("Created")
     else:
-        form = NumberArrayForm(request.user)
+        form = CreateInvitationForm(request.user)
 
     return render(request, 'number_array_template.html', {'form': form})
 

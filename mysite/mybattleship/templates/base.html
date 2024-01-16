@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Battleships{% endblock %}</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+</head>
+<body>
+    <header>
+        <!-- Header content (if any) -->
+    </header>
+
+    <nav>
+        <!-- You can add a navigation bar here if needed -->
+    </nav>
+
+    <main>
+        <!-- Back Button -->
+        <button onclick="history.back()">Go Back</button>
+
+        <!-- Content Block -->
+        {% block content %}
+        <!-- This block will be overridden by child templates -->
+        {% endblock %}
+    </main>
+
+    <footer>
+        <!-- Menu at the bottom of the page -->
+        <ul>
+            <li><a href="{% url 'main_menu' %}">Main Menu</a></li>
+        </ul>
+    </footer>
+
+    <script>
+        // Add any common JavaScript here
+    </script>
+</body>
+</html>

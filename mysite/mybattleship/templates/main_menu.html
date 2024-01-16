@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Main Menu
+{% endblock title %}
+
+{% block content %}
+    <h1>Main Menu</h1>
+    <ul>
+        <li><a href="{% url 'battlefields_list_view' %}">Battlefields</a></li>
+        <li><a href="{% url 'Game_list_view' %}">Games</a></li>
+        <li><a href="{% url 'Invitation_list_view' %}">Invitations</a></li>
+        <li><a href="{% url 'create_invitation' %}">Create Invitations</a></li>
+    </ul>
+{% endblock content %}

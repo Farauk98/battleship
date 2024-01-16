@@ -1,10 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Game Status</title>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block title %}
+Game Status
+{% endblock title %}
+
+{% block additional_scripts %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+{% endblock additional_scripts %}
+{% block content %}
     {% if winner %}
     {% if shot_error %}
     <div class="alert alert-danger">
@@ -13,7 +16,20 @@
     {% endif %}
     <h1>{{ user }}</h1>
     <h1>Player 1 Move: {{ player1_move }}</h1>
-    <!-- Wyświetlanie bitew -->
+    <div class="chat-section">
+        <h2>Chat</h2>
+        <div class="messages">
+            {% for message in chat_messages %}
+                <p><strong>{{ message.sender }}:</strong> {{ message.content }}</p>
+            {% endfor %}
+        </div>
+    
+        <<form method="post" action="{% url 'game_status' game_id=game_id %}">
+            {% csrf_token %}
+            {{ chat_form.as_p }}
+            <button type="submit" name="submit_chat">Send Message</button>
+        </form>
+    </div>
     <h2>Twoja plansza</h2>
     <div>
         {{ html_table1|safe }}
@@ -45,6 +61,8 @@
     {% else %}
     <h2>Czekaj na swoją kolej</h2>
     {% endif %}
+
+
     {% else %}
     <h2>Zakonczono Gre</h2>
     {% endif %}
@@ -63,5 +81,5 @@
         // Check for updates every 5 seconds
         setInterval(checkPlayerMove, 5000);
     </script>
-</body>
-</html>
+{% endblock content %}
+
