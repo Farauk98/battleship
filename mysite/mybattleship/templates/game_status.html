@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Status</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+    {% if winner %}
+    {% if shot_error %}
+    <div class="alert alert-danger">
+        {{ shot_error }}
+    </div>
+    {% endif %}
+    <h1>{{ user }}</h1>
+    <h1>Player 1 Move: {{ player1_move }}</h1>
+    <!-- Wyświetlanie bitew -->
+    <h2>Twoja plansza</h2>
+    <div>
+        {{ html_table1|safe }}
+    </div>
+
+    <h2>Plansza przeciwnika</h2>
+    <div>
+        {{ html_table2|safe }}
+    </div>
+
+    <h2>Ruchy</h2>
+    <div>
+        <ul>
+            {% for move in moves %}
+                <li>{{ move }}</li>  <!-- Załóżmy, że model Move ma odpowiednią reprezentację stringową -->
+            {% empty %}
+                <li>Brak ruchów w tej grze.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% if your_turn %}
+    <h2>Wykonaj strzał</h2>
+
+        <form method="post">  <!-- Załóżmy, że widok nazywa się 'shot_view' -->
+            {% csrf_token %}
+            {{ shot_form.as_p }}
+            <button type="submit">Strzelaj</button>
+        </form>
+    {% else %}
+    <h2>Czekaj na swoją kolej</h2>
+    {% endif %}
+    {% else %}
+    <h2>Zakonczono Gre</h2>
+    {% endif %}
+    <script>
+        function checkPlayerMove() {
+            $.ajax({
+                url: '/get_player1_move/',
+                success: function(data) {
+                    if (data.player1_move !== {{ player1_move|lower }}) {
+                        location.reload();
+                    }
+                }
+            });
+        }
+
+        // Check for updates every 5 seconds
+        setInterval(checkPlayerMove, 5000);
+    </script>
+</body>
+</html>
